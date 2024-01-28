@@ -25,6 +25,8 @@ TG_TV_SERIES_PATH = get_env('TG_MULTIMEDIA_PATH', 'tvSeries')
 YOUTUBE_LINKS_SOPORTED = get_env(
     'YOUTUBE_LINKS_SOPORTED', 'youtube.com,youtu.be')
 YOUTUBE_FORMAT = get_env('YOUTUBE_FORMAT', 'bestvideo+bestaudio/best')  # best
+YOUTUBE_AUDIO_FORMAT = get_env(
+    'YOUTUBE_AUDIO_FORMAT', 'bestaudio/best')  # best
 TG_UNZIP_TORRENTS = get_env('TG_UNZIP_TORRENTS', False)
 TG_PROGRESS_DOWNLOAD = get_env('TG_PROGRESS_DOWNLOAD', False)
 TG_FOLDER_BY_AUTHORIZED = get_env('TG_FOLDER_BY_AUTHORIZED', False)

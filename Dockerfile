@@ -29,6 +29,6 @@ RUN chmod 777 /app/bottorrent.py
 RUN chmod 777 -R /etc/services.d/
 
 
-VOLUME /download /watch /config
+VOLUME /download /watch /config /multimedia
 
 CMD ["python3", "/app/bottorrent.py"]

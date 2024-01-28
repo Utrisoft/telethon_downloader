@@ -8,6 +8,9 @@ from env import *
 from telethon.utils import get_extension, get_peer_id, resolve_id
 from telethon.tl import types
 from telethon import TelegramClient, events
+from telethon.tl.types import InputPeerUser
+from telethon.tl.functions.messages import SendMessageRequest
+from telethon.tl.types import ReplyInlineMarkup, KeyboardButtonCallback
 import configparser
 import logging
 import zipfile
@@ -18,7 +21,8 @@ import sys
 import shutil
 import os
 import re
-VERSION = "VERSION 3.1.12"
+
+VERSION = "VERSION 3.2.0-alpha"
 HELP = """
 /help		: This Screen
 /version	: Version  
@@ -119,15 +123,34 @@ async def worker(name):
             file_name = '{}{}'.format(
                 update.message.media.photo.id, get_extension(update.message.media))
         elif any(x in update.message.message for x in youtube_list):
+
             try:
                 url = update.message.message
 
-                logger.info(f'INIT DOWNLOADING VIDEO YOUTUBE [{url}] ')
-                loop = asyncio.get_event_loop()
-                task = loop.create_task(youtube_download(url, update, message))
-                download_result = await asyncio.wait_for(task, timeout=YT_DL_TIMEOUT)
-                logger.info(
-                    f'FINIT DOWNLOADING VIDEO YOUTUBE [{url}] [{download_result}] ')
+                suffix_data = username + '#' + url
+
+                buttonMKV_data = b'mkv#' + suffix_data.encode('utf-8')
+                buttonMP3_data = b'mp3#' + suffix_data.encode('utf-8')
+                # Crear el teclado en línea
+                buttons = [
+                    [KeyboardButtonCallback(".MKV", data=buttonMKV_data)],
+                    [KeyboardButtonCallback(".MP3", data=buttonMP3_data)]
+                ]
+                reply_markup = ReplyInlineMarkup(buttons)
+
+                # Obtener la entidad del usuario
+                user = await client.get_entity(username)
+
+                # Obtener el user_id y el access_hash
+                logger.info('user: %s' % (user))
+                user_id = user.id
+                access_hash = user.access_hash
+                logger.info('user_id: %d' % (user_id))
+                logger.info('access_hash: %s"' % (access_hash))
+
+                await client.send_message(entity=user,
+                                          message='Elige una opción:', buttons=buttons)
+
                 queue.task_done()
                 continue
             except Exception as e:
@@ -221,6 +244,45 @@ async def worker(name):
 
 client = TelegramClient(session, api_id, api_hash, proxy=None,
                         request_retries=10, flood_sleep_threshold=120)
+
+
+@events.register(events.CallbackQuery)
+async def youtube_download_callback(event):
+
+    data = event.data.decode('utf-8')
+    logger.info(f'BUTTON HANDLER METHOD')
+    if data:
+        logger.info(f'CALLBACK MESSAGE {data}')
+
+        format, username, url = data.split('#')
+        download_video = False
+        if format == 'mkv':
+            download_video = True
+
+        # Obtener la entidad del usuario
+        user = await client.get_entity(username)
+
+        try:
+            logger.info(f'INIT DOWNLOADING {format} YOUTUBE [{url}] ')
+            loop = asyncio.get_event_loop()
+            await youtube_download(url, download_video, user, client)
+        except Exception as e:
+            logger.info('ERROR: %s DOWNLOADING YT: %s' %
+                        (e.__class__.__name__, str(e)))
+            await client.send_message(entity=user, message='Error!')
+            await client.send_message(entity=user, message='ERROR: %s DOWNLOADING YT: %s' % (e.__class__.__name__, str(e)))
+    else:
+        logger.info(f'CALLBACK HAS NOT MESSAGE!')
+
+# Obtener el último mensaje
+
+
+async def get_last_message(username):
+    # Obtener el último mensaje del chat
+    messages = await client.get_messages(username, limit=1)
+    last_message = messages[0]
+
+    return last_message
 
 
 @events.register(events.NewMessage)
@@ -344,7 +406,7 @@ if __name__ == '__main__':
         # Arrancamos bot con token
         client.start(bot_token=str(bot_token))
         client.add_event_handler(handler)
-
+        client.add_event_handler(youtube_download_callback)
         # Pulsa Ctrl+C para detener
         loop.run_until_complete(tg_send_message(
             "Telethon Downloader Started: {}".format(VERSION)))
