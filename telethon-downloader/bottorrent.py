@@ -22,7 +22,7 @@ import shutil
 import os
 import re
 
-VERSION = "VERSION 3.2.0-alpha"
+VERSION = "VERSION 3.1.12"
 HELP = """
 /help		: This Screen
 /version	: Version  

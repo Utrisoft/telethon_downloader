@@ -1,6 +1,7 @@
 import os
 import time
 from yt_dlp import YoutubeDL
+from moviepy.editor import AudioFileClip
 
 
 from logger import logger
@@ -18,7 +19,7 @@ async def youtube_download_mp3(url, user, client):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '320',
+                'preferredquality': '192',
             }],
         }
 
@@ -36,8 +37,9 @@ async def youtube_download_mp3(url, user, client):
                             'outtmpl': f'{youtube_path}/%(title)s.%(ext)s', 'cachedir': 'False', 'ignoreerrors': True, "retries": 10, 'merge_output_format': 'mp3'}
                 ydl_opts.update(ydl_opts)
             else:
+                file_name = f'{info_dict["title"]}.webm'
                 youtube_path = os.path.join(
-                    PATH_YOUTUBE, info_dict['uploader'])
+                    PATH_YOUTUBE)
                 ydl_opts = {'format': YOUTUBE_AUDIO_FORMAT,
                             'outtmpl': f'{youtube_path}/%(title)s.%(ext)s', 'cachedir': 'False', 'ignoreerrors': True, "retries": 10, 'merge_output_format': 'mp3'}
                 ydl_opts.update(ydl_opts)
@@ -49,11 +51,18 @@ async def youtube_download_mp3(url, user, client):
 
             if (res_youtube == False):
                 os.chmod(youtube_path, 0o777)
-                filename = os.path.basename(file_name)
+                file_path = f'{youtube_path}/{file_name}'
+                mp3_file_path = file_path.replace('.webm', '.mp3')
+                # Convertimos el webm a mp3
+                convert_webm_to_mp3(file_path, mp3_file_path)
+
+                # Borramos el webm
+                os.remove(file_path)
+
                 logger.info(
-                    f'DOWNLOADED {total_downloads} SONG YOUTUBE [{file_name}] [{youtube_path}][{filename}]')
+                    f'DOWNLOADED {total_downloads} SONG YOUTUBE [{file_name}] [{mp3_file_path}]')
                 end_time_short = time.strftime('%H:%M', time.localtime())
-                await client.send_message(entity=user, message=f'Downloading finished {total_downloads} song at {end_time_short}\n{youtube_path}')
+                await client.send_message(entity=user, message=f'Downloading finished {total_downloads} song at {end_time_short}\n"{mp3_file_path}"')
             else:
                 logger.info(
                     f'ERROR: ONE OR MORE YOUTUBE SONGS NOT DOWNLOADED [{total_downloads}] [{url}] [{youtube_path}]')
@@ -63,6 +72,21 @@ async def youtube_download_mp3(url, user, client):
                     (e.__class__.__name__, str(e)))
         logger.info(
             f'ERROR: Exception ONE OR MORE YOUTUBE SONGS NOT DOWNLOADED')
+
+
+def convert_webm_to_mp3(input_file, output_file):
+    """
+    Convert a WebM audio file to an MP3 audio file.
+
+    Args:
+        input_file (str): The path to the input WebM audio file.
+        output_file (str): The path to the output MP3 audio file.
+
+    Returns:
+        None
+    """
+    audio = AudioFileClip(input_file)
+    audio.write_audiofile(output_file)
 
 
 async def youtube_download_mkv(url, user, client):
@@ -181,3 +205,6 @@ async def youtube_download(url, download_video, user, client):
 #                     (e.__class__.__name__, str(e)))
 #         logger.info(
 #             f'ERROR: Exception ONE OR MORE YOUTUBE VIDEOS NOT DOWNLOADED')
+#
+#
+#

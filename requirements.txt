@@ -1,4 +1,4 @@
 telethon
-# telebot
 yt_dlp
 python-telegram-bot
+moviepy
