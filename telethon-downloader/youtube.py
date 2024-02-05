@@ -37,7 +37,11 @@ async def youtube_download_mp3(url, user, client):
                             'outtmpl': f'{youtube_path}/%(title)s.%(ext)s', 'cachedir': 'False', 'ignoreerrors': True, "retries": 10, 'merge_output_format': 'mp3'}
                 ydl_opts.update(ydl_opts)
             else:
-                file_name = f'{info_dict["title"]}.webm'
+                # Comprobar si info_dict["uploader"] contiene la palara topic
+                if 'topic' in info_dict["uploader"]:
+                    file_name = f'{info_dict["title"]}.webm'
+                else:
+                    file_name = f'{info_dict["uploader"]} - {info_dict["title"]}.webm'
                 youtube_path = os.path.join(
                     PATH_YOUTUBE)
                 ydl_opts = {'format': YOUTUBE_AUDIO_FORMAT,
