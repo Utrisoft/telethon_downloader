@@ -45,7 +45,7 @@ async def youtube_download_mp3(url, user, client):
                 youtube_path = os.path.join(
                     PATH_YOUTUBE)
                 ydl_opts = {'format': YOUTUBE_AUDIO_FORMAT,
-                            'outtmpl': f'{youtube_path}/%(title)s.%(ext)s', 'cachedir': 'False', 'ignoreerrors': True, "retries": 10, 'merge_output_format': 'mp3'}
+                            'outtmpl': f'{youtube_path}/{file_name}', 'cachedir': 'False', 'ignoreerrors': True, "retries": 10, 'merge_output_format': 'mp3'}
                 ydl_opts.update(ydl_opts)
 
         with YoutubeDL(ydl_opts) as ydl:
